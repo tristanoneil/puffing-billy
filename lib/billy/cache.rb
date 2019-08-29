@@ -85,6 +85,16 @@ module Billy
 
       if Billy.config.cache_request_body_methods.include?(method) && !ignore_params && !merge_cached_response_key
         body_formatted = JSONUtils.json?(body.to_s) ? JSONUtils.sort_json(body.to_s) : body.to_s
+
+        if Billy.config.ignore_body_params
+          body_params = Rack::Utils.parse_query(body.to_s)
+
+          if Billy.config.ignore_body_params.any? { |param| body_params.include?(param) }
+            body_params.delete_if { |key| Billy.config.ignore_body_params.include?(key) }
+            body_formatted = Rack::Utils.build_query(body_params)
+          end
+        end
+
         body_msg = " with body '#{body_formatted}'"
         key += '_' + Digest::SHA1.hexdigest(body_formatted)
       end
